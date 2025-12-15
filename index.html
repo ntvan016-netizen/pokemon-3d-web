@@ -8,7 +8,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       overflow: hidden;
-      background: linear-gradient(135deg, #8f41e9 0%, #1a2a5e 100%);
+      background: linear-gradient(135deg, #FFD700 0%, #FFB90C 100%);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #fff;
     }
@@ -18,19 +18,22 @@
       top: 20px;
       left: 20px;
       z-index: 10;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
     .header h1 {
-      font-size: 28px;
+      font-size: 32px;
       margin-bottom: 5px;
+      color: #FFF;
     }
     .controls {
       position: absolute;
       bottom: 20px;
       left: 20px;
       z-index: 10;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.7);
       padding: 15px;
-      border-radius: 8px;
+      border-radius: 10px;
+      backdrop-filter: blur(10px);
     }
     button {
       background: #FFD700;
@@ -41,92 +44,173 @@
       cursor: pointer;
       font-weight: bold;
       color: #333;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      transition: all 0.3s;
     }
-    button:hover { background: #FFC700; }
-    .loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-size: 24px;
-      text-align: center;
-      z-index: 100;
-    }
+    button:hover { background: #FFC700; transform: scale(1.05); }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Pikachu 3D Interactive</h1>
-    <p>Pikachu từ anime - Đẹp như thực tế</p>
+    <h1>⚡ Pikachu 3D ⚡</h1>
+    <p>Đẹp như thực tế!</p>
   </div>
   <div class="controls">
     <button onclick="autoRotate = !autoRotate">Bật/Tắt Quay</button>
     <button onclick="zoomIn()">Phóng To</button>
     <button onclick="zoomOut()">Thu Nhỏ</button>
   </div>
-  <div class="loading"><p id="status">Đang tải Pikachu...</p></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script>
     let scene, camera, renderer, pikachu, autoRotate = true;
-    let pikachuModel = null;
 
     const scene_init = new THREE.Scene();
-    scene_init.background = new THREE.Color(0x8f41e9);
+    scene_init.background = new THREE.Color(0xFFD700);
+    scene_init.fog = new THREE.Fog(0xFFD700, 15, 100);
     
     const camera_init = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera_init.position.set(0, 1.5, 2.5);
-    camera_init.lookAt(0, 1, 0);
+    camera_init.position.set(0, 0.8, 2.2);
+    camera_init.lookAt(0, 0.5, 0);
     
     const renderer_init = new THREE.WebGLRenderer({antialias: true, alpha: false});
     renderer_init.setSize(window.innerWidth, window.innerHeight);
     renderer_init.shadowMap.enabled = true;
+    renderer_init.shadowMap.type = THREE.PCFShadowShadowMap;
     document.body.appendChild(renderer_init.domElement);
 
     scene = scene_init;
     camera = camera_init;
     renderer = renderer_init;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    // Premium Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
-    directionalLight.position.set(5, 10, 5);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(3, 5, 3);
     directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.far = 20;
     scene.add(directionalLight);
 
-    // Load Pikachu từ Sketchfab (GLB format URL)
-    const loader = new THREE.GLTFLoader();
-    
-    loader.load(
-      'https://models.readyplayer.me/64e99a10b49cd1cd4c7a7f8f.glb',
-      function(gltf) {
-        const model = gltf.scene;
-        model.scale.set(1.2, 1.2, 1.2);
-        model.position.y = 0;
-        
-        model.traverse((node) => {
-          if (node.isMesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-            node.material.shadowMap = true;
-          }
-        });
-        
-        pikachu = model;
-        scene.add(pikachu);
-        document.getElementById('status').style.display = 'none';
-        animate();
-      },
-      undefined,
-      function(error) {
-        console.log('Error loading model:', error);
-        document.getElementById('status').innerText = 'Lỗi tải Pikachu, thử sau...';
-      }
-    );
+    const pointLight = new THREE.PointLight(0xFFDD00, 0.5);
+    pointLight.position.set(-2, 2, 2);
+    scene.add(pointLight);
+
+    // Create Pikachu (Anime-style with smooth geometry)
+    pikachu = new THREE.Group();
+
+    const bodyGeom = new THREE.SphereGeometry(0.5, 64, 64);
+    bodyGeom.scale(1, 1.15, 0.85);
+    const yellowMat = new THREE.MeshStandardMaterial({
+      color: 0xFFDD00,
+      roughness: 0.2,
+      metalness: 0.05,
+      emissive: 0x333300
+    });
+    const body = new THREE.Mesh(bodyGeom, yellowMat);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    pikachu.add(body);
+
+    const headGeom = new THREE.SphereGeometry(0.48, 64, 64);
+    const head = new THREE.Mesh(headGeom, yellowMat);
+    head.position.set(0, 0.9, 0);
+    head.castShadow = true;
+    head.receiveShadow = true;
+    pikachu.add(head);
+
+    // Ears with rounded tips
+    const earGeom = new THREE.SphereGeometry(0.22, 32, 32);
+    const leftEar = new THREE.Mesh(earGeom, yellowMat);
+    leftEar.position.set(-0.3, 1.35, 0);
+    leftEar.scale.set(1, 1.6, 1);
+    leftEar.castShadow = true;
+    leftEar.receiveShadow = true;
+    pikachu.add(leftEar);
+
+    const rightEar = new THREE.Mesh(earGeom, yellowMat);
+    rightEar.position.set(0.3, 1.35, 0);
+    rightEar.scale.set(1, 1.6, 1);
+    rightEar.castShadow = true;
+    rightEar.receiveShadow = true;
+    pikachu.add(rightEar);
+
+    // Eyes
+    const eyeGeom = new THREE.SphereGeometry(0.14, 32, 32);
+    const eyeMat = new THREE.MeshStandardMaterial({color: 0x000000, emissive: 0x111111});
+    const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
+    leftEye.position.set(-0.12, 1.05, 0.4);
+    pikachu.add(leftEye);
+    const rightEye = new THREE.Mesh(eyeGeom, eyeMat);
+    rightEye.position.set(0.12, 1.05, 0.4);
+    pikachu.add(rightEye);
+
+    // Cheeks (gradient red)
+    const cheekGeom = new THREE.SphereGeometry(0.2, 32, 32);
+    const redMat = new THREE.MeshStandardMaterial({color: 0xFF5555, roughness: 0.3});
+    const leftCheek = new THREE.Mesh(cheekGeom, redMat);
+    leftCheek.position.set(-0.38, 0.7, 0.35);
+    leftCheek.scale.set(0.9, 1.1, 0.8);
+    pikachu.add(leftCheek);
+    const rightCheek = new THREE.Mesh(cheekGeom, redMat);
+    rightCheek.position.set(0.38, 0.7, 0.35);
+    rightCheek.scale.set(0.9, 1.1, 0.8);
+    pikachu.add(rightCheek);
+
+    // Mouth (cute smile)
+    const mouthGeom = new THREE.SphereGeometry(0.1, 24, 24);
+    const mouthMat = new THREE.MeshStandardMaterial({color: 0x000000});
+    const mouth = new THREE.Mesh(mouthGeom, mouthMat);
+    mouth.scale.set(1.2, 0.7, 0.5);
+    mouth.position.set(0, 0.5, 0.42);
+    pikachu.add(mouth);
+
+    // Belly (cream color)
+    const bellyGeom = new THREE.SphereGeometry(0.3, 32, 32);
+    const creamMat = new THREE.MeshStandardMaterial({color: 0xFFFACD, roughness: 0.25});
+    const belly = new THREE.Mesh(bellyGeom, creamMat);
+    belly.position.set(0, 0.1, 0.48);
+    belly.scale.set(1, 1.1, 0.9);
+    pikachu.add(belly);
+
+    // Tail (curved lightning bolt)
+    const tailGeom = new THREE.SphereGeometry(0.15, 32, 32);
+    const tail = new THREE.Mesh(tailGeom, yellowMat);
+    tail.position.set(0, -0.35, -0.7);
+    tail.scale.set(1.2, 1.5, 1);
+    tail.castShadow = true;
+    pikachu.add(tail);
+
+    // Arms
+    const armGeom = new THREE.SphereGeometry(0.13, 24, 24);
+    const leftArm = new THREE.Mesh(armGeom, yellowMat);
+    leftArm.position.set(-0.45, 0.3, 0);
+    leftArm.scale.set(0.8, 1.3, 0.8);
+    leftArm.castShadow = true;
+    pikachu.add(leftArm);
+    const rightArm = new THREE.Mesh(armGeom, yellowMat);
+    rightArm.position.set(0.45, 0.3, 0);
+    rightArm.scale.set(0.8, 1.3, 0.8);
+    rightArm.castShadow = true;
+    pikachu.add(rightArm);
+
+    // Feet
+    const footGeom = new THREE.SphereGeometry(0.18, 24, 24);
+    const leftFoot = new THREE.Mesh(footGeom, yellowMat);
+    leftFoot.position.set(-0.3, -0.6, 0.1);
+    leftFoot.scale.set(1.2, 0.7, 1.3);
+    leftFoot.castShadow = true;
+    pikachu.add(leftFoot);
+    const rightFoot = new THREE.Mesh(footGeom, yellowMat);
+    rightFoot.position.set(0.3, -0.6, 0.1);
+    rightFoot.scale.set(1.2, 0.7, 1.3);
+    rightFoot.castShadow = true;
+    pikachu.add(rightFoot);
+
+    scene.add(pikachu);
 
     let animationId = null;
     
@@ -134,14 +218,16 @@
       animationId = requestAnimationFrame(animate);
       
       if (pikachu && autoRotate) {
-        pikachu.rotation.y += 0.005;
+        pikachu.rotation.y += 0.003;
       }
       
       renderer.render(scene, camera);
     }
 
-    function zoomIn() { camera.position.z -= 0.3; }
-    function zoomOut() { camera.position.z += 0.3; }
+    function zoomIn() { camera.position.z -= 0.2; }
+    function zoomOut() { camera.position.z += 0.2; }
+
+    animate();
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
