@@ -1,0 +1,60 @@
+name: Kiểm tra sức khỏe dự án
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 */6 * * *'  # Kiểm tra 6 giờ một lần
+  workflow_dispatch:
+
+jobs:
+  check-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Kiểm tra file quan trọng
+        run: |
+          echo "Kiểm tra tệp quan trọng..."
+          missing_files=()
+          
+          required_files=(
+            "index.html"
+          )
+          
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              missing_files+=("$file")
+            else
+              echo "✓ $file tồn tại"
+            fi
+          done
+          
+          if [ ${#missing_files[@]} -gt 0 ]; then
+            echo "❌ LỖI: Các file sau bị thiếu:"
+            printf '%s\n' "${missing_files[@]}"
+            exit 1
+          else
+            echo "✓ Tất cả file quan trọng tồn tại"
+          fi
+      
+      - name: Kiểm tra HTML hợp lệ
+        run: |
+          echo "Kiểm tra HTML..."
+          if grep -q "<!DOCTYPE html>" index.html; then
+            echo "✓ index.html có DOCTYPE"
+          else
+            echo "❌ LỖI: index.html thiếu DOCTYPE"
+            exit 1
+          fi
+      
+      - name: Thông báo nếu thành công
+        if: success()
+        run: echo "✅ Kiểm tra sức khỏe dự án thành công!"
+      
+      - name: Ghi chú nếu thất bại
+        if: failure()
+        run: |
+          echo "❌ Kiểm tra thất bại! Vui lòng kiểm tra thông báo ở trên."
+          exit 1
